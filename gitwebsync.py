@@ -225,7 +225,7 @@ if __name__ == "__main__":
     
     # create a profile that persists between sessons
     # log into your github account from this session the first time run
-    option.add_argument("user-data-dir=home/ndavie/.config/BraveSoftware/Brave-Browser");
+    option.add_argument("user-data-dir=home/ndavie2/.config/BraveSoftware/Brave-Browser");
 
     s = Service(chromedriver)
 
