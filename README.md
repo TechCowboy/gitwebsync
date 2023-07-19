@@ -2,6 +2,8 @@
 
 This python script is not an example of good code, but it does the job
 
+Near the top of the file is the variable 'account' -- set it to your github account
+
 This is what it does
 
 1) Starts a selenium session and minimizes browser
