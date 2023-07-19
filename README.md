@@ -12,5 +12,5 @@ This is what it does
 4) Maximizes browser and then performs a web sync on each out-of-date repository
 5) Finds all the local repositories
 6) Determines the status of the local repositories
-7) Syncs were possible
+7) Syncs where possible
  
