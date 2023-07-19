@@ -1,3 +1,6 @@
+# gitwebsync
+# by Norman Davie
+
 import requests
 from bs4 import BeautifulSoup
 import os
@@ -9,6 +12,10 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 
+## Change this to your account
+
+account = "https://github.com/TechCowboy"
+
 ## create an object of the chrome webdriver
 
 chromedriver = "/home/ndavie/chromedriver"
@@ -19,10 +26,9 @@ option.add_argument("user-data-dir=home/ndavie/.config/BraveSoftware/Brave-Brows
 s = Service(chromedriver)
 
 driver = webdriver.Chrome(service=s, options=option)
+driver.minimize_window()
 
-
-print("Collecting Web Repositories...")
-account = "https://github.com/TechCowboy"
+print("Collecting Web Repositories...", end='')
 
 done = False
 page_number = 1
@@ -71,10 +77,10 @@ for repository in repository_links:
     else:
             print("Up to date " + repository)
         
-# #########################################3333
-# #########################################3333
-# #########################################3333
-# #########################################3333
+# #########################################
+# #########################################
+# #########################################
+# #########################################
 
 print()
 if len(repositories_to_update) == 0:
@@ -136,9 +142,13 @@ driver.quit()
 
 print("Done Web Syncing.")
 
-# ################################################
-# AFTER SYNC
-# ################################################
+# #########################################
+# #########################################
+# #########################################
+
+# #########################################
+# AFTER WEB SYNC; NOW LOCAL SYNC
+# #########################################
 
 # get directories
 
