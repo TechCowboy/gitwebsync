@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 import os
 import subprocess
 import time
+from pathlib import Path
 
 from selenium import webdriver
 from selenium.webdriver.support.select import Select
@@ -18,7 +19,7 @@ account = "https://github.com/TechCowboy"
 ## Download from here:
 ## https://www.selenium.dev/documentation/webdriver/browsers/
 
-chromedriver = "~/chromedriver"
+chromedriver = "chromedriver"
 
 def collecting_web_repositories(repository_links):
     
@@ -118,7 +119,7 @@ def web_sync_repositories(repositories_to_update, driver):
                 
             if element_found:
                 element.click()
-                time.sleep(1)
+                time.sleep(5)
             else:
                 print("Could not find update element")
                 break
@@ -227,9 +228,27 @@ if __name__ == "__main__":
     # log into your github account from this session the first time run
     option.add_argument("user-data-dir=home/ndavie2/.config/BraveSoftware/Brave-Browser");
 
-    s = Service(chromedriver)
+    old_path = os.getcwd()
+    print(f"{old_path}")
+    home_path = Path.home()
+    print(f"{home_path}")
+    os.chdir(home_path)
+    
+    driver_path = os.path.join(home_path, chromedriver)
+    print(f"{driver_path}")
+    s = Service(driver_path)
+    print("sleeping 2 seconds")
+    time.sleep(2)
 
-    driver = webdriver.Chrome(service=s, options=option)
+
+    try:
+        driver = webdriver.Chrome(service=s, options=option)
+    except Exception as e:
+        print("webdriver failed.")
+        print(str(e))
+        exit(-2)
+        
+    os.chdir(old_path)
     driver.minimize_window()
     
     repository_links = []
