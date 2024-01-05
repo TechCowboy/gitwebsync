@@ -44,12 +44,21 @@ def collecting_web_repositories(repository_links):
             repository_links.append("https://github.com" + a_href)
             
         page_number += 1
+        
+
 
     print()
     
 def repositories_needing_updates(repositories_to_update):
 
+    page_num = 0
     for repository in repository_links:
+        page_num += 1
+        
+        #if page_num > 10:
+        #    break
+        
+        print(str(page_num).rjust(5) + " of " + str(len(repository_links)).rjust(5) + "  ", end='')
         page = requests.get(repository)
         soup = BeautifulSoup(page.content, "html.parser")
         
@@ -80,57 +89,66 @@ def web_sync_repositories(repositories_to_update, driver):
         print("Everything is up to date.")
     else:
         for repository in repositories_to_update:
-            print(f"Syncing {repository}", end='')
-            
-            driver.get(repository)
-            time.sleep(1)
-            driver.maximize_window()
-            time.sleep(1)
             element_found = False
-            try:
-                full_xpath = "/html/body/div[1]/div[6]/div/main/turbo-frame/div/div/div/div[2]/div[1]/div[4]/div[2]/details[2]/summary"
-                xpath = '//*[@id="repo-content-pjax-container"]/div/div/div[2]/div[1]/div[4]/div[2]/details[2]/summary'
-                element = driver.find_element(By.XPATH, full_xpath)
-                element_found = True
-
-            except Exception as e:
-                print()
-                print(str(e))
-                print("You are probably not logged into your GitHub account on this profile")
-                print("Please sign in, close the browser, and re-run this application")
-                exit(-1)
+            while not element_found:
+                print(f"Syncing {repository} ", end='')
                 
-            if element_found:
-                element.click()
+                driver.get(repository)
                 time.sleep(1)
-            else:
-                print("Could not find sync element")
-                break
-
-            element_found = False
-            try:
-                full_xpath = "/html/body/div[1]/div[6]/div/main/turbo-frame/div/div/div/div[2]/div[1]/div[4]/div[2]/details[2]/div/div/div[2]/ul[1]/li[2]/div/form/button"
-                xpath = '//*[@id="repo-content-pjax-container"]/div/div/div[2]/div[1]/div[4]/div[2]/details[2]/div/div/div[2]/ul[1]/li[2]/div/form/button'
-                element = driver.find_element(By.XPATH, full_xpath)
-                element_found = True
-
-            except Exception as e:
-                print(str(e))
-                
-            if element_found:
-                element.click()
-                time.sleep(5)
-            else:
-                print("Could not find update element")
-                break
-
-
-            while True:
+                #driver.maximize_window()
+                #time.sleep(1)
+                element_found = False
                 try:
-                    text = element.text
-                    print(".", end='')
-                except:
-                    break
+                    full_xpath = "/html/body/div[1]/div[6]/div/main/turbo-frame/div/div/div/div[2]/div[1]/react-partial/div/div/div[1]/div/div/div[2]/div[2]/div/div[3]/div[2]/div/button[2]/span[1]/span[2]"
+                    xpath = '//*[@id=":rf:"]/span[1]/span[2]'
+                    element = driver.find_element(By.XPATH, full_xpath) # was full_xpath
+                    element_found = True
+
+                except Exception as e:
+                    print()
+                    print("Could not find element:", full_xpath, "'")
+                    print()
+                    print(str(e))
+                    print("You are probably not logged into your GitHub account on this profile")
+                    print("Please sign in, close the browser, and re-run this application")
+                    exit(-1)
+                    
+                if element_found:
+                    print("<Clicking Sync> ", end='')
+                    element.click()
+                    time.sleep(1)
+                else:
+                    print("Could not find sync element")
+                    continue
+
+                element_found = False
+                time.sleep(1)
+                try:
+                    full_xpath = "/html/body/div[4]/div/div/div/div/div[2]/button/span/span"
+                    xpath = '//*[@id=":rf:"]/span[1]/span[2]'
+                    element = driver.find_element(By.XPATH, full_xpath)
+                    element_found = True
+
+                except Exception as e:
+                    element_found = False
+                
+                    
+                if element_found:
+                    print("<Clicking Update Branch>")
+                    time.sleep(1)
+                    element.click()
+                    time.sleep(1)
+                else:
+                    print("Could not find update button - retry")
+                    continue
+
+
+            #while True:
+            #    try:
+            #        text = element.text
+            #        print(f"text: {text}", end='')
+            #    except:
+            #        break
 
             print()
         
@@ -249,7 +267,10 @@ if __name__ == "__main__":
         exit(-2)
         
     os.chdir(old_path)
-    driver.minimize_window()
+    driver.get(account)
+    time.sleep(1)
+    driver.maximize_window()
+    time.sleep(1)
     
     repository_links = []
     collecting_web_repositories(repository_links)
