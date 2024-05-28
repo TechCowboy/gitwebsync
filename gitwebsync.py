@@ -7,6 +7,8 @@ import os
 import subprocess
 import time
 from pathlib import Path
+import pyautogui as pag
+import clipboard as cb
 
 from selenium import webdriver
 from selenium.webdriver.support.select import Select
@@ -18,6 +20,7 @@ account = "https://github.com/TechCowboy"
 ## where to find the chrome driver
 ## Download from here:
 ## https://www.selenium.dev/documentation/webdriver/browsers/
+## https://googlechromelabs.github.io/chrome-for-testing/
 
 chromedriver = "chromedriver"
 
@@ -49,111 +52,124 @@ def collecting_web_repositories(repository_links):
 
     print()
     
-def repositories_needing_updates(repositories_to_update):
+def top_of_page():
+    for i in range(10):
+        print("up")
+        pag.hotkey('arrow up')
+        
+def find_first(desired_result, no_ctrl_enter=False, copy=True):
 
+    cb.copy("")
+
+    pag.hotkey('ctrl','f')
+    pag.hotkey('backspace')
+    
+    pag.typewrite(desired_result)
+    if no_ctrl_enter:
+        pag.hotkey('enter')
+    else:
+        pag.hotkey('ctrl', 'enter')
+    
+    if copy:
+        pag.hotkey('esc')
+    
+        pag.hotkey('ctrl','c')
+        result = cb.paste()
+    else:
+        result = ""
+        
+    return desired_result == result
+
+
+def find_occurance(desired_result, occurance):
+
+    #top_of_page()
+    pag.PAUSE=0.3
+    cb.copy("")
+    pag.hotkey('ctrl','f')
+    pag.hotkey('backspace')
+    pag.typewrite(desired_result)
+    
+    pag.hotkey('tab')
+    pag.hotkey('tab')
+    for i in range(occurance-1):
+        pag.hotkey("enter")
+
+    pag.hotkey('shift','tab')
+    pag.hotkey('shift','tab')
+        
+    pag.hotkey('ctrl','enter')
+    
+    pag.PAUSE=0.3
+    
+    return 
+
+
+def sync_repositories(repositories_to_update):
+
+    notices = []
+    
     page_num = 0
     for repository in repository_links:
         page_num += 1
         
-        #if page_num > 10:
-        #    break
-        
         print(str(page_num).rjust(5) + " of " + str(len(repository_links)).rjust(5) + "  ", end='')
-        page = requests.get(repository)
-        soup = BeautifulSoup(page.content, "html.parser")
+        print(repository)
         
-        result = soup.find("div", class_="d-flex flex-auto")
-        if result == None:
-            print("Not fork'd " + repository)
+        driver.get(repository)
+        
+        window_title = repository
+        
+        desired_result = "forked from"
+        forked = find_first(desired_result, no_ctrl_enter=True)
+        if not forked:
+            print("Not forked")
             continue
         
-        result = str(result)
-        position =  result.find("This branch is up to date")
-        if position == -1:
-            position = result.find("commits behind")
-            if position == -1:
-                position = result.find("commit behind")
-            if position != -1:
-                print("Needs Sync " + repository)
-                repositories_to_update.append(repository)
-            else:
-                print("Newer      " + repository)
+        
+        desired_result = "This branch is up to date with"
+        already_synced = find_first(desired_result)
+        
+        if already_synced:
+            print("Up to date")
+            continue
+         
+        desired_result = "commits behind"
+        commits_behind = find_first(desired_result, no_ctrl_enter=True)
+        
+        desired_result = "commit behind"
+        commit_behind = find_first(desired_result, no_ctrl_enter=True)
+        
+        sync_required = commits_behind or commit_behind
+           
+        if sync_required:
+            print("Syncing...")
+            
+            desired_result = 'Sync fork'
+            sync_branch = find_first(desired_result, copy=False)
+            
+            desired_result = 'Update branch'
+            update_branch = find_occurance(desired_result, 2)
+            
+            time.sleep(5)
         else:
-                print("Up to date " + repository)
-
+            
+            desired_result = "commits ahead"
+            commits_ahead = find_first(desired_result, no_ctrl_enter=True)
+            
+            desired_result = "commit ahead"
+            commit_ahead = find_first(desired_result, no_ctrl_enter=True)
+            if commit_ahead or commits_ahead:
+                print("We have uncommited commits.")
+                notices.append(f"missing commits {repository}")
+            
+            
     print()
     
-def web_sync_repositories(repositories_to_update, driver):
-
-    if len(repositories_to_update) == 0:
-        print("Everything is up to date.")
-    else:
-        for repository in repositories_to_update:
-            element_found = False
-            while not element_found:
-                print(f"Syncing {repository} ", end='')
-                
-                driver.get(repository)
-                time.sleep(1)
-                #driver.maximize_window()
-                #time.sleep(1)
-                element_found = False
-                try:
-                    full_xpath = "/html/body/div[1]/div[6]/div/main/turbo-frame/div/div/div/div[2]/div[1]/react-partial/div/div/div[1]/div/div/div[2]/div[2]/div/div[3]/div[2]/div/button[2]/span[1]/span[2]"
-                    xpath = '//*[@id=":rf:"]/span[1]/span[2]'
-                    element = driver.find_element(By.XPATH, full_xpath) # was full_xpath
-                    element_found = True
-
-                except Exception as e:
-                    print()
-                    print("Could not find element:", full_xpath, "'")
-                    print()
-                    print(str(e))
-                    print("You are probably not logged into your GitHub account on this profile")
-                    print("Please sign in, close the browser, and re-run this application")
-                    exit(-1)
-                    
-                if element_found:
-                    print("<Clicking Sync> ", end='')
-                    element.click()
-                    time.sleep(1)
-                else:
-                    print("Could not find sync element")
-                    continue
-
-                element_found = False
-                time.sleep(1)
-                try:
-                    full_xpath = "/html/body/div[4]/div/div/div/div/div[2]/button/span/span"
-                    xpath = '//*[@id=":rf:"]/span[1]/span[2]'
-                    element = driver.find_element(By.XPATH, full_xpath)
-                    element_found = True
-
-                except Exception as e:
-                    element_found = False
-                
-                    
-                if element_found:
-                    print("<Clicking Update Branch>")
-                    time.sleep(1)
-                    element.click()
-                    time.sleep(1)
-                else:
-                    print("Could not find update button - retry")
-                    continue
-
-
-            #while True:
-            #    try:
-            #        text = element.text
-            #        print(f"text: {text}", end='')
-            #    except:
-            #        break
-
-            print()
-        
-
-    print("Done Web Syncing.")
+    for n in notices:
+        print(n)
+    
+    
 
 
 # get directories
@@ -200,10 +216,10 @@ def sync_local_repositories(git_dirs):
         result = subprocess.run(['git', 'status'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output = result.stdout.decode('utf-8')
         
-        behind = output.find("Your branch is behind") >= 0
-        modified = output.find("modified:") >= 0
+        behind    = output.find("Your branch is behind") >= 0
+        modified  = output.find("modified:") >= 0
         untracked = output.find("Untracked files:") >= 0
-        uptodate = output.find("Your branch is up to date with") >= 0
+        uptodate  = output.find("Your branch is up to date with") >= 0
         
         if uptodate:
             if modified:
@@ -263,22 +279,21 @@ if __name__ == "__main__":
         driver = webdriver.Chrome(service=s, options=option)
     except Exception as e:
         print("webdriver failed.")
+        print("Need new version? https://googlechromelabs.github.io/chrome-for-testing/#stable ")
         print(str(e))
         exit(-2)
         
     os.chdir(old_path)
     driver.get(account)
     time.sleep(1)
-    driver.maximize_window()
-    time.sleep(1)
+    #driver.maximize_window()
+    #time.sleep(1)
     
     repository_links = []
     collecting_web_repositories(repository_links)
 
     repositories_to_update = []
-    repositories_needing_updates(repositories_to_update)
-    
-    web_sync_repositories(repositories_to_update, driver)
+    sync_repositories(repositories_to_update)
     
     driver.close()
     driver.quit()
