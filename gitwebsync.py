@@ -151,13 +151,17 @@ def sync_repositories(repositories_to_update):
             desired_result = 'Update branch'
             update_branch = find_occurance(desired_result, 2)
             
-            desired_result = "This branch is up to date with"
+            desired_result1 = "commits behind"
+            desired_result2 = "commit behind"
             not_yet_synced = True
             
             retry = 0
-            while not_yet_synced:         
-                not_yet_synced = not find_first(desired_result)
+            while not_yet_synced:
                 time.sleep(2)
+                not_yet_synced = find_first(desired_result1)
+                if not_yet_synced:
+                    not_yet_synced = find_first(desired_result2)
+                
                 retry += 1
                 if retry == 10:
                     retry = 0
