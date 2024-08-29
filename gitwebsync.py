@@ -263,13 +263,41 @@ def sync_local_repositories(git_dirs):
                 total_up_to_date += 1
 
     print()
-    print(f"{total_up_to_date} repositories are up to date")        
+    print(f"{total_up_to_date} repositories are up to date")         
 
-
+def get_urls_of_local_repositories(git_dirs, git_urls):
+    
+    print("Getting URLs from local repositories...")
+    
+    for dir in git_dirs:
+        os.chdir(dir)
+        
+        result = subprocess.run(['git', 'remote','-v'], stdout=subprocess.PIPE)
+        lines = result.stdout.decode('utf-8').split("\n")
+        line = lines[0][:-8]
+        columns = line.split('\t')
+        url = columns[1]
+        
+        if columns[0] == 'origin':
+            url = url.replace('git@github.com:', 'https://github.com/')
+            print(url)
+            git_urls.append(url)
+            
+    print()
+    print(f"{len(git_urls)} repositories collected") 
+    
 
 if __name__ == "__main__":
+    
+    all = False
+    
+    if all:
+        print("Updating all web repositories")
+    else:
+        print("Only updating web repositories with corresponding local repositories")
+        
+        
     ## create an object of the chrome webdriver
-
     
     option = webdriver.ChromeOptions()
     # line below needed for brave browser
@@ -306,8 +334,16 @@ if __name__ == "__main__":
     #driver.maximize_window()
     #time.sleep(1)
     
+    # get the names of the local git directories
+    git_dirs = []
+    get_local_repositories(git_dirs)
+    
+    # get the urls of the local git's
     repository_links = []
-    collecting_web_repositories(repository_links)
+    if not all:
+        get_urls_of_local_repositories(git_dirs, repository_links)
+    else:
+        collecting_web_repositories(repository_links)
 
     repositories_to_update = []
     sync_repositories(repositories_to_update)
@@ -315,8 +351,7 @@ if __name__ == "__main__":
     driver.close()
     driver.quit()
     
-    git_dirs = []
-    get_local_repositories(git_dirs)
+    
 
     sync_local_repositories(git_dirs)
     
