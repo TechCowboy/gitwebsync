@@ -4,6 +4,10 @@
 import requests
 from bs4 import BeautifulSoup
 import os
+import sys
+if sys.platform == "linux":
+        print("running xhost...")
+        os.system("xhost +")
 import subprocess
 import time
 from pathlib import Path
@@ -21,6 +25,8 @@ account = "https://github.com/TechCowboy"
 ## Download from here:
 ## https://www.selenium.dev/documentation/webdriver/browsers/
 ## https://googlechromelabs.github.io/chrome-for-testing/
+
+# use 'xhost +' if you get err.DisplayConnectionError
 
 chromedriver = "chromedriver"
 
@@ -114,7 +120,7 @@ def sync_repositories(repositories_to_update):
         page_num += 1
         
         print(str(page_num).rjust(5) + " of " + str(len(repository_links)).rjust(5) + "  ", end='')
-        print(repository)
+        print(repository.ljust(60), end='')
         
         driver.get(repository)
         
@@ -177,8 +183,8 @@ def sync_repositories(repositories_to_update):
             desired_result = "commit ahead"
             commit_ahead = find_first(desired_result, no_ctrl_enter=True)
             if commit_ahead or commits_ahead:
-                print("We have uncommited commits.")
-                notices.append(f"missing commits {repository}")
+                print("You are ahead in commits.")
+                notices.append(f"You are ahead in commits. {repository}")
             
             
     print()
@@ -288,6 +294,9 @@ def get_urls_of_local_repositories(git_dirs, git_urls):
     
 
 if __name__ == "__main__":
+    
+    
+    
     
     all = False
     
