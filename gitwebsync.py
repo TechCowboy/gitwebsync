@@ -6,8 +6,8 @@ from bs4 import BeautifulSoup
 import os
 import sys
 if sys.platform == "linux":
-        print("running xhost...")
-        os.system("xhost +")
+    print("running xhost...")
+    os.system("xhost +")
 import subprocess
 import time
 from pathlib import Path
@@ -59,7 +59,7 @@ def collecting_web_repositories(repository_links):
     print()
     
 def top_of_page():
-    for i in range(10):
+    for _ in range(10):
         print("up")
         pag.hotkey('arrow up')
         
@@ -98,7 +98,7 @@ def find_occurance(desired_result, occurance):
     
     pag.hotkey('tab')
     pag.hotkey('tab')
-    for i in range(occurance-1):
+    for _ in range(occurance-1):
         pag.hotkey("enter")
 
     pag.hotkey('shift','tab')
@@ -296,11 +296,11 @@ def get_urls_of_local_repositories(git_dirs, git_urls):
 if __name__ == "__main__":
     
     
+    download_missing = False
     
+    sync_all = True
     
-    all = False
-    
-    if all:
+    if sync_all:
         print("Updating all web repositories")
     else:
         print("Only updating web repositories with corresponding local repositories")
@@ -310,23 +310,27 @@ if __name__ == "__main__":
     
     option = webdriver.ChromeOptions()
     # line below needed for brave browser
-    option.binary_location = '/usr/bin/brave-browser-stable'
     
     # create a profile that persists between sessons
     # log into your github account from this session the first time run
-    option.add_argument("user-data-dir=home/ndavie2/.config/BraveSoftware/Brave-Browser");
+    option.add_argument("user-data-dir=/home/ndavie2/.config/BraveSoftware/Brave-Browser");
 
     old_path = os.getcwd()
-    print(f"{old_path}")
+    print(f"old path: {old_path}")
     home_path = Path.home()
-    print(f"{home_path}")
+    print(f"home path: {home_path}")
     os.chdir(home_path)
     
+    if sys.platform == "win32":
+        chromedriver += ".exe"
+    else:
+        option.binary_location = '/usr/bin/brave-browser-stable'
+
+        
     driver_path = os.path.join(home_path, chromedriver)
-    print(f"{driver_path}")
+    print(f"driver path: {driver_path}")
     s = Service(driver_path)
-    print("sleeping 2 seconds")
-    time.sleep(2)
+
 
 
     try:
@@ -336,7 +340,11 @@ if __name__ == "__main__":
         print("Need new version? https://googlechromelabs.github.io/chrome-for-testing/#stable ")
         print(str(e))
         exit(-2)
-        
+      
+    sleep_time = 10
+    print(f"sleeping {sleep_time} seconds")
+    time.sleep(sleep_time)
+    
     os.chdir(old_path)
     driver.get(account)
     time.sleep(1)
@@ -347,21 +355,56 @@ if __name__ == "__main__":
     git_dirs = []
     get_local_repositories(git_dirs)
     
-    # get the urls of the local git's
-    repository_links = []
-    if not all:
-        get_urls_of_local_repositories(git_dirs, repository_links)
-    else:
-        collecting_web_repositories(repository_links)
+    found_local_repository_links = []
+    all_web_repository_links = []
+    
+    if download_missing:
+        get_urls_of_local_repositories(git_dirs, found_local_repository_links)
+        collecting_web_repositories(all_web_repository_links)
+        
+        for i in range(len(found_local_repository_links)):
+            if found_local_repository_links[i][-4:] == ".git":
+                found_local_repository_links[i] = found_local_repository_links[i][:-4]
+                
+            
+        
+        all_web_repository_links.sort()
+        found_local_repository_links.sort()
+        
+    update = True
+    if update:
+        print("Updating local repositories")
+        # get the urls of the local git's
+        repository_links = []
+        if not sync_all:
+            get_urls_of_local_repositories(git_dirs, repository_links)
+        else:
+            collecting_web_repositories(repository_links)
+            
 
-    repositories_to_update = []
-    sync_repositories(repositories_to_update)
+        repositories_to_update = []
+        sync_repositories(repositories_to_update)
+    
     
     driver.close()
     driver.quit()
     
     
-
-    sync_local_repositories(git_dirs)
+    if update:
+        sync_local_repositories(git_dirs)
     
+    if download_missing:
+        cwd = os.getcwd()
+        cwd = os.path.abspath(os.path.join(cwd, os.pardir))
+        
+        os.chdir(cwd)
+        print(cwd)
+        for web in all_web_repository_links:
+            if not web in found_local_repository_links:
+                cmd = "gh repo clone " + web
+                print(cmd)
+                
+                os.system(cmd)        
+            else:
+                print(f"   local storage: {web}")
     
