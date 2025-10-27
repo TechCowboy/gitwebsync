@@ -310,11 +310,15 @@ if __name__ == "__main__":
     
     option = webdriver.ChromeOptions()
     # line below needed for brave browser
+    option.binary_location = '/usr/bin/brave-browser-stable'
     
     # create a profile that persists between sessons
     # log into your github account from this session the first time run
-    option.add_argument("user-data-dir=/home/ndavie2/.config/BraveSoftware/Brave-Browser");
-
+    if sys.platform != "win32":
+        print("linux")
+        option.add_argument("user-data-dir=home/ndavie2/.config/BraveSoftware/Brave-Browser");
+    option.add_argument('--profile-directory=Default')
+    
     old_path = os.getcwd()
     print(f"old path: {old_path}")
     home_path = Path.home()
