@@ -30,7 +30,7 @@ account = "https://github.com/TechCowboy"
 
 chromedriver = "chromedriver"
 
-def collecting_web_repositories(repository_links):
+def collecting_web_repositories(_repository_links):
     
     print("Collecting Web Repositories...", end='')
 
@@ -50,7 +50,7 @@ def collecting_web_repositories(repository_links):
 
         for repository in results:
             a_href=repository.find("a").get("href")
-            repository_links.append("https://github.com" + a_href)
+            _repository_links.append("https://github.com" + a_href)
             
         page_number += 1
         
@@ -116,15 +116,13 @@ def sync_repositories(repositories_to_update):
     notices = []
     
     page_num = 0
-    for repository in repository_links:
+    for repository in repositories_to_update:
         page_num += 1
         
-        print(str(page_num).rjust(5) + " of " + str(len(repository_links)).rjust(5) + "  ", end='')
+        print(str(page_num).rjust(5) + " of " + str(len(repositories_to_update)).rjust(5) + "  ", end='')
         print(repository.ljust(60), end='')
         
         driver.get(repository)
-        
-        window_title = repository
         
         desired_result = "forked from"
         forked = find_first(desired_result, no_ctrl_enter=True)
@@ -196,7 +194,7 @@ def sync_repositories(repositories_to_update):
 
 
 # get directories
-def get_local_repositories(git_dirs):
+def get_local_repositories(_git_dirs):
     debug = 1
 
     print("Finding local git repositories...")
@@ -211,16 +209,16 @@ def get_local_repositories(git_dirs):
     for dir in all_dirs:
         if os.path.isdir(dir):
             if os.path.exists(os.path.join(dir, ".git")):
-                git_dirs.append(os.path.abspath(dir))
+                _git_dirs.append(os.path.abspath(dir))
 
-    total_dirs = len(git_dirs)
+    total_dirs = len(_git_dirs)
     print(f"{total_dirs} git directories found")
     
-def sync_local_repositories(git_dirs):
+def sync_local_repositories(_git_dirs):
     print("Getting the latest status on each remote repositories...")
-    total_dirs = len(git_dirs)
-    status_size = 45
-    for dir in git_dirs:
+    total_dirs = len(_git_dirs)
+
+    for dir in _git_dirs:
         os.chdir(dir)
         count = f"{total_dirs}"
         print(f"{count:3} {dir:70}\r", end='')
@@ -234,7 +232,7 @@ def sync_local_repositories(git_dirs):
 
     latest_but_modified = 'Lastest from remote but local files modified'
 
-    for dir in git_dirs:
+    for dir in _git_dirs:
         os.chdir(dir)
         result = subprocess.run(['git', 'status'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         output = result.stdout.decode('utf-8')
@@ -271,11 +269,11 @@ def sync_local_repositories(git_dirs):
     print()
     print(f"{total_up_to_date} repositories are up to date")         
 
-def get_urls_of_local_repositories(git_dirs, git_urls):
+def get_urls_of_local_repositories(_git_dirs, _git_urls):
     
     print("Getting URLs from local repositories...")
     
-    for dir in git_dirs:
+    for dir in _git_dirs:
         os.chdir(dir)
         
         result = subprocess.run(['git', 'remote','-v'], stdout=subprocess.PIPE)
@@ -287,10 +285,10 @@ def get_urls_of_local_repositories(git_dirs, git_urls):
         if columns[0] == 'origin':
             url = url.replace('git@github.com:', 'https://github.com/')
             print(url)
-            git_urls.append(url)
+            _git_urls.append(url)
             
     print()
-    print(f"{len(git_urls)} repositories collected") 
+    print(f"{len(_git_urls)} repositories collected") 
     
 
 if __name__ == "__main__":
@@ -309,27 +307,22 @@ if __name__ == "__main__":
     ## create an object of the chrome webdriver
     
     option = webdriver.ChromeOptions()
-    # line below needed for brave browser
-    option.binary_location = '/usr/bin/brave-browser-stable'
     
     # create a profile that persists between sessons
     # log into your github account from this session the first time run
-    if sys.platform != "win32":
-        print("linux")
-        option.add_argument("user-data-dir=home/ndavie2/.config/BraveSoftware/Brave-Browser");
-    option.add_argument('--profile-directory=Default')
+
+    option.add_argument("user-data-dir=/home/ndavie2/.config/BraveSoftware/Brave-Browser");
+    if sys.platform == "linux":
+        option.binary_location = '/usr/bin/brave-browser-stable'
+    else:
+        chromedriver += ".exe"
+    #option.add_argument('--profile-directory=Default')
     
     old_path = os.getcwd()
     print(f"old path: {old_path}")
     home_path = Path.home()
     print(f"home path: {home_path}")
     os.chdir(home_path)
-    
-    if sys.platform == "win32":
-        chromedriver += ".exe"
-    else:
-        option.binary_location = '/usr/bin/brave-browser-stable'
-
         
     driver_path = os.path.join(home_path, chromedriver)
     print(f"driver path: {driver_path}")
@@ -345,13 +338,14 @@ if __name__ == "__main__":
         print(str(e))
         exit(-2)
       
+
+    
+    os.chdir(old_path)
+    driver.get(account)
     sleep_time = 10
     print(f"sleeping {sleep_time} seconds")
     time.sleep(sleep_time)
     
-    os.chdir(old_path)
-    driver.get(account)
-    time.sleep(1)
     #driver.maximize_window()
     #time.sleep(1)
     
