@@ -296,7 +296,7 @@ if __name__ == "__main__":
     
     download_missing = False
     
-    sync_all = True
+    sync_all = False
     
     if sync_all:
         print("Updating all web repositories")
@@ -311,10 +311,11 @@ if __name__ == "__main__":
     # create a profile that persists between sessons
     # log into your github account from this session the first time run
 
-    option.add_argument("user-data-dir=/home/ndavie2/.config/BraveSoftware/Brave-Browser");
     if sys.platform == "linux":
         option.binary_location = '/usr/bin/brave-browser-stable'
+        option.add_argument("user-data-dir=home/ndavie2/.config/BraveSoftware/Brave-Browser");
     else:
+        option.add_argument("user-data-dir=/home/ndavie2/.config/BraveSoftware/Brave-Browser");
         chromedriver += ".exe"
     #option.add_argument('--profile-directory=Default')
     
